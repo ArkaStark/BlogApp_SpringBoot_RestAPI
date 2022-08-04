@@ -3,8 +3,14 @@ package com.springboot.blog.springbootblogrestapi.service.impl;
 import com.springboot.blog.springbootblogrestapi.entity.Post;
 import com.springboot.blog.springbootblogrestapi.exceptions.ResourceNotFoundException;
 import com.springboot.blog.springbootblogrestapi.payload.PostDto;
+import com.springboot.blog.springbootblogrestapi.payload.PostResponse;
 import com.springboot.blog.springbootblogrestapi.repository.PostRepository;
 import com.springboot.blog.springbootblogrestapi.service.PostService;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +21,12 @@ public class PostServiceImpl implements PostService {
 
     private PostRepository postRepository;
 
-    public PostServiceImpl(PostRepository postRepository) {
+    private ModelMapper mapper;
+
+    public PostServiceImpl(PostRepository postRepository, ModelMapper mapper) {
+
         this.postRepository = postRepository;
+        this.mapper = mapper;
     }
 
     @Override
@@ -32,10 +42,28 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostDto> getAllPosts() {
+    public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) {
+//      Create Pageable instance
 
-        List<Post> posts = postRepository.findAll();
-        return posts.stream().map(post -> mapToDto(post)).collect(Collectors.toList());
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())?
+                Sort.by(sortBy).ascending():
+                Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Page<Post> posts = postRepository.findAll(pageable);
+
+//      Get content for page object
+        List<Post> postList = posts.getContent();
+        List<PostDto> content =  postList.stream().map(post -> mapToDto(post)).collect(Collectors.toList());
+
+        PostResponse postResponse = new PostResponse();
+        postResponse.setContent(content);
+        postResponse.setPageNo(posts.getNumber());
+        postResponse.setPageSize(posts.getSize());
+        postResponse.setTotalElements(posts.getTotalElements());
+        postResponse.setTotalPages(posts.getTotalPages());
+        postResponse.setLast(posts.isLast());
+
+        return postResponse;
     }
 
     @Override
@@ -69,20 +97,28 @@ public class PostServiceImpl implements PostService {
 
     //  Convert entity to DTO
     private PostDto mapToDto(Post post){
-        PostDto postResponse = new PostDto();
-        postResponse.setId(post.getId());
-        postResponse.setTitle((post.getTitle()));
-        postResponse.setDescription((post.getDescription()));
-        postResponse.setContent((post.getContent()));
+
+        PostDto postResponse = mapper.map(post, PostDto.class);
+
+//        PostDto postResponse = new PostDto();
+//        postResponse.setId(post.getId());
+//        postResponse.setTitle((post.getTitle()));
+//        postResponse.setDescription((post.getDescription()));
+//        postResponse.setContent((post.getContent()));
+
         return postResponse;
     }
 
 //    Convert DTO to entity
     private Post mapToEntity(PostDto postDto){
-        Post post = new Post();
-        post.setTitle(postDto.getTitle());
-        post.setDescription(postDto.getDescription());
-        post.setContent(postDto.getContent());
+
+        Post post = mapper.map(postDto, Post.class);
+
+//        Post post = new Post();
+//        post.setTitle(postDto.getTitle());
+//        post.setDescription(postDto.getDescription());
+//        post.setContent(postDto.getContent());
+
         return post;
     }
 }
