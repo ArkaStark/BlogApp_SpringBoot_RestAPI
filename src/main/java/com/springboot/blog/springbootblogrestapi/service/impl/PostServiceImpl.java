@@ -6,6 +6,7 @@ import com.springboot.blog.springbootblogrestapi.payload.PostDto;
 import com.springboot.blog.springbootblogrestapi.payload.PostResponse;
 import com.springboot.blog.springbootblogrestapi.repository.PostRepository;
 import com.springboot.blog.springbootblogrestapi.service.PostService;
+import io.micrometer.core.annotation.Timed;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,6 +43,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Timed(value = "getAllPosts.time")
     public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) {
 //      Create Pageable instance
 
@@ -92,6 +94,12 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(id).orElseThrow(() ->
                 new ResourceNotFoundException("Post", "id", id));
         postRepository.delete(post);
+    }
+
+    @Override
+    public List<Post> searchPosts(String query) {
+        List<Post> posts = postRepository.searchPosts(query);
+        return posts;
     }
 
 

@@ -1,5 +1,6 @@
 package com.springboot.blog.springbootblogrestapi.controller;
 
+import com.springboot.blog.springbootblogrestapi.entity.Post;
 import com.springboot.blog.springbootblogrestapi.payload.PostDto;
 import com.springboot.blog.springbootblogrestapi.payload.PostDtoV2;
 import com.springboot.blog.springbootblogrestapi.payload.PostResponse;
@@ -85,6 +86,11 @@ public class PostController {
     public ResponseEntity<String> deletePost(@PathVariable(name = "id") long id){
         postService.deletePostById(id);
         return new ResponseEntity<>("Post entity deleted successfully!", HttpStatus.OK);
+    }
+
+    @GetMapping("/api/v2/posts/search")
+    public ResponseEntity<List<Post>> searchPosts(@RequestParam("query") String query){
+        return ResponseEntity.ok(postService.searchPosts(query));
     }
 }
 
